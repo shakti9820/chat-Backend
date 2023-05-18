@@ -30,7 +30,7 @@ const server = app.listen(PORT, () =>
 );
 const io = socket(server, {
   cors: {
-    origin: "chatty4u.netlify.app",
+    origin: "https://chatty4u.netlify.app/",
     credentials: true,
   },
 });
