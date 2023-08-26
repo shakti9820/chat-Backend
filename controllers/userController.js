@@ -1,6 +1,8 @@
 const User = require("../models/userModel");
 const bcrypt = require("bcrypt");
-
+const jwt = require('jsonwebtoken');
+const JWT_SECRET=process.env.JWT_SECRET;
+// console.log(JWT_SECRET);
 module.exports.login = async (req, res, next) => {
   try {
     const { username, password } = req.body;
@@ -11,7 +13,9 @@ module.exports.login = async (req, res, next) => {
     if (!isPasswordValid)
       return res.json({ msg: "Incorrect Username or Password", status: false });
     delete user.password;
-    return res.json({ status: true, user });
+    const token=jwt.sign({user},"secretKey");
+    // console.log(token);
+    return res.json({ status: true, token });
   } catch (ex) {
     next(ex);
   }
@@ -33,8 +37,28 @@ module.exports.register = async (req, res, next) => {
       password: hashedPassword,
     });
     delete user.password;
-    return res.json({ status: true, user });
+    const token=jwt.sign({user},"secretKey");
+    return res.json({ status: true, token });
   } catch (ex) {
+    next(ex);
+  }
+};
+
+
+module.exports.getData = async (req, res, next) => {
+  const userId = (req.userId);
+  //  console.log(typeof req.userId);
+  try {
+    const user = await User.findById({_id:userId}).select('-password');
+    // console.log(user);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    // console.log(user);
+    res.json(user);
+  } catch (error) {
+    console.error('Error fetching user info:', error);
+    res.status(500).json({ error: 'An error occurred' });
     next(ex);
   }
 };
@@ -44,9 +68,9 @@ module.exports.getAllUsers = async (req, res, next) => {
     const users = await User.find({ _id: { $ne: req.params.id } }).select([
       "email",
       "username",
-      "avatarImage",
       "_id",
     ]);
+    // console.log(users);
     return res.json(users);
   } catch (ex) {
     next(ex);
